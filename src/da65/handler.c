@@ -34,6 +34,7 @@
 
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 /* common */
 #include "xmalloc.h"
@@ -130,7 +131,7 @@ static const char* GetAddrArg (unsigned Flags, unsigned Addr)
 
 
 
-static void GenerateLabel (unsigned Flags, unsigned Addr)
+static bool GenerateLabel (unsigned Flags, unsigned Addr)
 /* Generate a label in pass one if requested */
 {
     /* Generate labels in pass #1, and only if we don't have a label already */
@@ -188,6 +189,10 @@ static void GenerateLabel (unsigned Flags, unsigned Addr)
                 AddDepLabel (Addr, atIntLabel, GetLabelName (LabelAddr), Offs);
             }
         }
+	return true;
+    }
+    else {
+	return false;
     }
 }
 
@@ -343,10 +348,14 @@ void OH_Relative (const OpcDesc* D)
     unsigned Addr = (((int) PC+2) + Offs) & 0xFFFF;
 
     /* Generate a label in pass 1 */
-    GenerateLabel (D->Flags, Addr);
+    bool LabelGenerated = GenerateLabel (D->Flags, Addr);
 
     /* Output the line */
-    OneLine (D, "%s", GetAddrArg (D->Flags, Addr));
+    if (LabelGenerated == true) {
+	OneLine (D, "%s", GetAddrArg (D->Flags, Addr));
+    } else {
+	OneLine (D, "$%02X", GetCodeByte (PC+1));
+    }
 }
 
 
